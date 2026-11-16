@@ -243,9 +243,12 @@ Description: Order data form page
                                             <div class="form-group">
                                                 <label for="delivery_country">{{ 'lang.storefront.form.country.label'|t }} <small class="text-muted normal">(*)</small></label>
                                                 <select name="delivery_country" id="delivery_country" class="form-control" required>
-                                                    <option value selected disabled>{{ 'lang.storefront.form.country.select.default'|t }}</option>
+                                                    <option value disabled>{{ 'lang.storefront.form.country.select.default'|t }}</option>
+                                                    {% set delivery_pt_selected = false %}
                                                     {% for key, country in countries %}
-                                                        <option value="{{ key }}" {% if user.delivery.country_code == key %} selected {% endif %}>{{ country }}</option>
+                                                        {% set is_pt = not user.delivery.country_code and not delivery_pt_selected and (key == 'PT' or 'Portugal' in country) %}
+                                                        {% if is_pt %}{% set delivery_pt_selected = true %}{% endif %}
+                                                        <option value="{{ key }}" {% if user.delivery.country_code == key or is_pt %} selected {% endif %}>{{ country }}</option>
                                                     {% endfor %}
                                                 </select>
                                             </div>
@@ -314,9 +317,12 @@ Description: Order data form page
                                         <div class="form-group">
                                             <label for="billing_country">{{ 'lang.storefront.form.country.label'|t }} <small class="text-muted normal">(*)</small></label>
                                             <select name="billing_country" id="billing_country" class="form-control">
-                                                <option value selected disabled>{{ 'lang.storefront.form.country.select.default'|t }}</option>
+                                                <option value disabled>{{ 'lang.storefront.form.country.select.default'|t }}</option>
+                                                {% set billing_pt_selected = false %}
                                                 {% for key, country in countries %}
-                                                    <option value="{{ key }}" {% if user.billing.country_code == key %} selected {% endif %}>{{ country }}</option>
+                                                    {% set is_pt = not user.billing.country_code and not billing_pt_selected and (key == 'PT' or 'Portugal' in country) %}
+                                                    {% if is_pt %}{% set billing_pt_selected = true %}{% endif %}
+                                                    <option value="{{ key }}" {% if user.billing.country_code == key or is_pt %} selected {% endif %}>{{ country }}</option>
                                                 {% endfor %}
                                             </select>
                                         </div>
@@ -345,38 +351,38 @@ Description: Order data form page
 
                         <dl class="dl-horizontal text-left margin-bottom-0">
                             <dt class="bold">{{ 'lang.storefront.layout.subtotal.title'|t }}</dt>
-                            <dd class="text-dark price">{{ cart.subtotal | money_with_sign }}</dd>
+                            <dd class="text-dark price">{{ cart.subtotal|money_with_sign }}</dd>
 
                             {% if cart.discount %}
                                 <dt><a class="link-inherit" data-toggle="collapse" href="#discount-detail" role="button" aria-expanded="true" aria-controls="discount-detail">{{ 'lang.storefront.order.discount'|t }} {{ icons('angle-down') }}</a></dt>
-                                <dd class="text-dark price">{{ '- ' ~ cart.discount | money_with_sign }}</dd>
+                                <dd class="text-dark price">{{ '- ' ~ cart.discount|money_with_sign }}</dd>
 
                                 <div class="collapse in text-muted" id="discount-detail">
                                     {% if cart.coupon %}
                                         <dt class="margin-left-xs normal">{{ 'lang.storefront.order.discount.coupon'|t }}</dt>
-                                        <dd>{{ cart.coupon.type == 'shipping' ? 'lang.storefront.cart.order_summary.free_shipping'|t : '- ' ~ cart.coupon.discount | money_with_sign }}</dd>
+                                        <dd>{{ cart.coupon.type == 'shipping' ? 'lang.storefront.cart.order_summary.free_shipping'|t : '- ' ~ cart.coupon.discount|money_with_sign }}</dd>
                                     {% endif %}
                                     {% if cart.rewards %}
                                         <dt class="margin-left-xs normal">{{ store.settings.rewards.plural_label ?: 'lang.storefront.account.rewards.plural.label'|t }}</dt>
-                                        <dd>{{ '- ' ~ cart.rewards.discount | money_with_sign }}</dd>
+                                        <dd>{{ '- ' ~ cart.rewards.discount|money_with_sign }}</dd>
                                     {% endif %}
                                 </div>
                             {% endif %}
 
                             {% set no_shipping_text = 'lang.storefront.cart.order_summary.shipping.calculating.text'|t ~ ' <span data-toggle="tooltip" data-placement="top" title="' ~ 'lang.storefront.cart.order_summary.shipping.calculating.tooltip'|t ~ '">' ~ icons('question-circle') ~ '</span>' %}
                             <dt>{{ 'lang.storefront.cart.order_summary.shipping.title'|t }}</dt>
-                            <dd class="text-dark price total-shipping">{{ cart.shipping_methods ? (user.shipping_method ? (cart.coupon.type == 'shipping' or cart.total_shipping == 0 ? 'lang.storefront.cart.order_summary.shipping_total.free'|t : cart.total_shipping | money_with_sign) : no_shipping_text) : cart.total_shipping | money_with_sign }}</dd>
+                            <dd class="text-dark price total-shipping">{{ cart.shipping_methods ? (user.shipping_method ? (cart.coupon.type == 'shipping' or cart.total_shipping == 0 ? 'lang.storefront.cart.order_summary.shipping_total.free'|t : cart.total_shipping|money_with_sign) : no_shipping_text) : cart.total_shipping|money_with_sign }}</dd>
 
                             {% if cart.total_payment %}
                                 <div class="flex">
                                     <dt>{{ 'lang.storefront.cart.order_summary.total_payment'|t }} <span data-toggle="tooltip" data-placement="top" title="{{ user.payment_method.title }}">{{ icons('question-circle') }}</span></dt>
-                                    <dd class="text-dark price">{{ cart.total_payment | money_with_sign }}</dd>
+                                    <dd class="text-dark price">{{ cart.total_payment|money_with_sign }}</dd>
                                 </div>
                             {% endif %}
 
                             {% if not store.taxes_included or cart.total_taxes == 0 %}
                                 <dt>{{ user.l10n.tax_name }}</dt>
-                                <dd class="text-dark price">{{ cart.total_taxes | money_with_sign }}</dd>
+                                <dd class="text-dark price">{{ cart.total_taxes|money_with_sign }}</dd>
                             {% endif %}
                         </dl>
 
@@ -384,7 +390,7 @@ Description: Order data form page
 
                         <dl class="dl-horizontal text-left h3 margin-bottom-0">
                             <dt>{{ 'lang.storefront.order.total'|t }}</dt>
-                            <dd class="bold price">{{ cart.total | money_with_sign }}</dd>
+                            <dd class="bold price">{{ cart.total|money_with_sign }}</dd>
                         </dl>
 
                         {% if store.taxes_included and cart.total_taxes > 0 %}
@@ -425,7 +431,7 @@ Description: Order data form page
                             </div>
                         {% endif %}
 
-                        <button class="btn btn-lg btn-primary {{ store.theme_options.button_primary_shadow }} btn-block margin-top hidden-xs hidden-sm">{{ 'lang.storefront.layout.button.checkout'|t }} {{ icons('arrow-right') }}</button>
+                        <button class="btn btn-lg btn-primary {{ store.theme_options.button_primary_shadow }} btn-block margin-top hidden-xs hidden-sm">Continuar {{ icons('arrow-right') }}</button>
                     </div>
 
                 </div>
@@ -438,7 +444,7 @@ Description: Order data form page
                             {{ 'lang.storefront.cart.data.step_one'|t }}
                         </div>
                         <div class="pull-right">
-                            <small class="text-muted-dark"><a href="{{ site_url('cart') }}">{{ 'lang.storefront.cart.data.cart_edit.button'|t }}</a> &nbsp; &bull; &nbsp; </small> <button class="btn btn-primary {{ store.theme_options.button_primary_shadow }}">{{ 'lang.storefront.layout.button.checkout'|t }} {{ icons('arrow-right') }}</button>
+                            <small class="text-muted-dark"><a href="{{ site_url('cart') }}">{{ 'lang.storefront.cart.data.cart_edit.button'|t }}</a> &nbsp; &bull; &nbsp; </small> <button class="btn btn-primary {{ store.theme_options.button_primary_shadow }}">Continuar {{ icons('arrow-right') }}</button>
                         </div>
                     </footer>
                 </div>
@@ -448,4 +454,15 @@ Description: Order data form page
 
     </div>
 
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var countrySelect = document.getElementById("delivery_country");
+            if (countrySelect && countrySelect.value) {
+                countrySelect.dispatchEvent(new Event("change", { bubbles: true }));
+                if (window.jQuery) {
+                    window.jQuery(countrySelect).trigger("change");
+                }
+            }
+        });
+    </script>
 {% endblock %}
